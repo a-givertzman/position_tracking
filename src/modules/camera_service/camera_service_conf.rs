@@ -81,6 +81,7 @@ impl CameraServiceConf {
         let me = "CameraServiceConf";
         let dbg = Dbg::new(&parent, me);
         let name = Name::new(parent, me);
+        // log::debug!("{dbg}.new | conf: {:#?}", conf);
         log::trace!("{dbg}.new | name: {:?}", name);
         let wait_started: Option<Duration> = conf.get_duration("wait-started").ok();
         log::trace!("{}.new | wait-started: {:?}", dbg, wait_started);
