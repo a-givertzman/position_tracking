@@ -1,6 +1,7 @@
 service CameraService:
     wait-started: 10 ms         # optional, next service will wait until current completely started plus specified time
     camera:
+        from-path: frames/
         fps: Max                    # Max / Min / 30.0
         resolution: 
             width: 1200

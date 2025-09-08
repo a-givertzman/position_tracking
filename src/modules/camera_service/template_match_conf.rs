@@ -48,12 +48,12 @@ impl TemplateMatchConf {
     /// Returns `TemplateMatchModes` parsed from string
     fn template_match_modes_from_str(method: &str) -> Result<opencv::imgproc::TemplateMatchModes, Error> {
         match method.to_lowercase().as_str() {
-            "TM_SQDIFF" => Ok(opencv::imgproc::TemplateMatchModes::TM_SQDIFF),
-            "TM_SQDIFF_NORMED" => Ok(opencv::imgproc::TemplateMatchModes::TM_SQDIFF_NORMED),
-            "TM_CCORR" => Ok(opencv::imgproc::TemplateMatchModes::TM_CCORR),
-            "TM_CCORR_NORMED" => Ok(opencv::imgproc::TemplateMatchModes::TM_CCORR_NORMED),
-            "TM_CCOEFF" => Ok(opencv::imgproc::TemplateMatchModes::TM_CCOEFF),
-            "TM_CCOEFF_NORMED" => Ok(opencv::imgproc::TemplateMatchModes::TM_CCOEFF_NORMED),
+            "tm_sqdiff" => Ok(opencv::imgproc::TemplateMatchModes::TM_SQDIFF),
+            "tm_sqdiff_normed" => Ok(opencv::imgproc::TemplateMatchModes::TM_SQDIFF_NORMED),
+            "tm_ccorr" => Ok(opencv::imgproc::TemplateMatchModes::TM_CCORR),
+            "tm_ccorr_normed" => Ok(opencv::imgproc::TemplateMatchModes::TM_CCORR_NORMED),
+            "tm_ccoeff" => Ok(opencv::imgproc::TemplateMatchModes::TM_CCOEFF),
+            "tm_ccoeff_normed" => Ok(opencv::imgproc::TemplateMatchModes::TM_CCOEFF_NORMED),
             _ => Err(Error::new("TemplateMatchConf", "template_match_modes_from_str").err(format!("Unknown method {}", method))),
         }
     }

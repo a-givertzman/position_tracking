@@ -1,5 +1,5 @@
 use std::{sync::{atomic::{AtomicBool, Ordering}, Arc}, time::Duration};
-use frdm_tools::{camera::Camera, AutoBrightnessAndContrast, AutoGamma, ContextRead, Cropping, Eval, Image, Initial, InitialCtx, ResultCtx};
+use frdm_tools::{camera::Camera, AutoBrightnessAndContrast, AutoBrightnessAndContrastCtx, AutoGamma, ContextRead, Cropping, Eval, Image, Initial, InitialCtx, ResultCtx};
 use sal_core::{dbg::Dbg, error::Error};
 use sal_sync::{services::{entity::{Name, Object}, Service, ServiceWaiting, RECV_TIMEOUT}, sync::Handles, thread_pool::Scheduler};
 
@@ -49,6 +49,30 @@ impl CameraService {
         }
         opencv::highgui::wait_key(1).unwrap();
     }
+    ///
+    /// Processing an image
+    fn process(dbg: &Dbg, window: &str, window_src: &str, window_abc: &str, templ_match: &TemplateMatch, frame: &Image) {
+        log::info!("{dbg}.process | Source frame...");
+        opencv::highgui::imshow(window_src, &frame.mat).unwrap();
+        opencv::highgui::wait_key(1).unwrap();
+        log::info!("{dbg}.process | Calculations...");
+        match templ_match.eval(frame.clone()) {
+            Ok(ctx) => {
+                log::info!("{dbg}.process | Calculations - Ok");
+                
+                let abc: &AutoBrightnessAndContrastCtx = ctx.read();
+                log::info!("{dbg}.process | ABC frame...");
+                opencv::highgui::imshow(window_abc, &abc.result.mat).unwrap();
+                // opencv::highgui::wait_key(1).unwrap();
+                
+                let result: &ResultCtx = ctx.read();
+                log::info!("{dbg}.process | Result frame...");
+                opencv::highgui::imshow(window, &result.frame.mat).unwrap();
+            }
+            Err(err) => log::info!("{dbg}.run | Template match error: {:?}", err),
+        };
+        // opencv::highgui::wait_key(1).unwrap();
+    }
 }
 //
 //
@@ -78,14 +102,16 @@ impl Service for CameraService {
         let conf = self.conf.clone();
         let template = self.template.clone();
         let window = format!("Template-matching");
+        let window_src = format!("Source frame");
+        let window_abc = format!("BrightnessContrast");
         let exit = self.exit.clone();
         let service_waiting = ServiceWaiting::new(&name, conf.wait_started);
         let service_release = service_waiting.release();
         let handles_clone = self.handles.clone();
-        Self::setup_opencv_windows(&dbg, vec![&window]);
         log::debug!("{}.run | Preparing thread...", dbg);
         let handle = self.scheduler.spawn(move || {
             let dbg = &dbg;
+            Self::setup_opencv_windows(&dbg, vec![&window, &window_src, &window_abc]);
             let templ_match = TemplateMatch::new(
                 conf.template_match.method,
                 conf.template_match.threshold,
@@ -114,15 +140,10 @@ impl Service for CameraService {
                     let frames = camera.from_images(path).unwrap();
                     service_release.add(Ok(()));
                     for frame in frames {
-                        match templ_match.eval(frame) {
-                            Ok(ctx) => {
-                                let result: &ResultCtx = ctx.read();
-                                let frame = &result.frame;
-                                opencv::highgui::imshow(&window, &frame.mat).unwrap();
-                                opencv::highgui::wait_key(1).unwrap();
-                            }
-                            Err(err) => log::info!("{dbg}.run | Template match error: {:?}", err),
-                        }
+                        Self::process(&dbg, &window, &window_src, &window_abc, &templ_match, &frame);
+                        // match templ_match.eval(frame) {
+                        //     Err(err) => log::info!("{dbg}.run | Template match error: {:?}", err),
+                        // }
                         std::thread::sleep(Duration::from_millis(100));
                     }
                 }
@@ -138,17 +159,7 @@ impl Service for CameraService {
                                 log::debug!("{dbg}.run | Receiving frames from camera...");
                                 'camera: loop {
                                     match camera_stream.recv_timeout(RECV_TIMEOUT) {
-                                        Ok(frame) => {
-                                            match templ_match.eval(frame) {
-                                                Ok(ctx) => {
-                                                    let result: &ResultCtx = ctx.read();
-                                                    let frame = &result.frame;
-                                                    opencv::highgui::imshow(&window, &frame.mat).unwrap();
-                                                    opencv::highgui::wait_key(1).unwrap();
-                                                }
-                                                Err(err) => log::info!("{dbg}.run | Template match error: {:?}", err),
-                                            }
-                                        }
+                                        Ok(frame) => Self::process(&dbg, &window, &window_src, &window_abc, &templ_match, &frame),
                                         Err(err) => {
                                             match err {
                                                 kanal::ReceiveErrorTimeout::Timeout => {}
