@@ -82,6 +82,7 @@ impl Service for CameraService {
         let service_waiting = ServiceWaiting::new(&name, conf.wait_started);
         let service_release = service_waiting.release();
         let handles_clone = self.handles.clone();
+        Self::setup_opencv_windows(&dbg, vec![&window]);
         log::debug!("{}.run | Preparing thread...", dbg);
         let handle = self.scheduler.spawn(move || {
             let dbg = &dbg;
