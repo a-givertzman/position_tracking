@@ -26,10 +26,10 @@ service CameraService:
             y: 10           # new top edge
             height: 1180    # new image height
         gamma:
-            factor: 95.0            # percent of influence of [AutoGamma] algorythm bigger the value more the effect of [AutoGamma] algorythm, %
+            factor: 99.0            # percent of influence of [AutoGamma] algorythm bigger the value more the effect of [AutoGamma] algorythm, %
         brightness-contrast:
-            hist-clip-left: 1.0     # optional histogram clipping from right, default = 0.0 %
-            hist-clip-right: 1.0    # optional histogram clipping from right, default = 0.0 %
+            hist-clip-left: 0.0     # optional histogram clipping from right, default = 0.0 %
+            hist-clip-right: 0.0    # optional histogram clipping from right, default = 0.0 %
         gausian:
             blur-size:              # blur radius
                 width: 3
@@ -45,6 +45,6 @@ service CameraService:
             src2-weight: 0.5
             gamma: 0.0
     template-match:
-        template: template.png
+        template: template_128.png
         threshold: 0.8
         method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended, 

@@ -33,12 +33,14 @@
 //!     - Пересчитываем и получаем положение сегмента оносительно положения камеры
 //! - В моменты когда камера проходит границу между соседними сегментами, берем кадр с камеры и считаем дефекты
 //! - Граница между сегментами задается с допустимой погрешность `segment-threshold`
+mod bf_match;
 mod camera_service_conf;
 mod camera_service;
 mod image_conf;
 mod template_match_conf;
 mod template_match;
 
+pub(crate) use bf_match::*;
 pub(crate) use camera_service_conf::*;
 pub(crate) use camera_service::*;
 pub(crate) use image_conf::*;
