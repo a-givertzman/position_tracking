@@ -1,0 +1,21 @@
+[package]
+name = "position_tracking"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+log = "~0.4"
+env_logger = "~0.11"
+#
+# Internal
+sal-core = { tag = "0.1.0", git = "https://github.com/a-givertzman/rust-sal-core.git" }
+testing = { tag = "0.1.2", git = "https://github.com/a-givertzman/rust-testing.git" }
+debugging = { tag = "0.0.1", git = "https://github.com/a-givertzman/rust-debuging.git" }
+sal-sync = { tag = "0.3.0", git = "https://github.com/a-givertzman/rust-sal-sync.git" }
+frdm-tools = { tag = "0.1.0", git = "https://github.com/a-givertzman/frdm-server.git" }
+#
+# OpenCV
+opencv = { version = "~0.95", features = ["clang-runtime"], git = "https://github.com/twistedfall/opencv-rust" }
+#
+# Tread safe
+kanal = { version = "~0.1", git = "https://github.com/fereidani/kanal.git" }
