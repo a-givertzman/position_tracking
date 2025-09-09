@@ -20,28 +20,44 @@ fn main() -> Result<(), Error>{
     let file = OpenOptions::new().read(true).open(conf).map_err(|err| Error::new(&dbg, "main").pass(err.to_string()))?;
     let conf = serde_yaml::from_reader(file).map_err(|err| Error::new(&dbg, "main").pass(err.to_string()))?;
     // log::debug!("{dbg}.main | conf: {:#?}", conf);
-    let mut services: Vec<Box<dyn Service>> = vec![];
     let conf = ConfTree::new_root(conf);
-    for node in conf.nodes() {
-        if let Ok(keywd) = ConfKeywd::from_str(&node.key) {
-            if keywd.kind() == ConfKind::Service.to_string() {
-                match keywd.kind().as_str() {
-                    "CameraService" => {
-                        let conf = CameraServiceConf::new(&dbg, node);
-                        let template = Image::load(&conf.template_match.template)?;
-                        let service = CameraService::new(&dbg, conf, template, position_send.clone(), thread_pool.scheduler());
-                        services.push(Box::new(service));
+    let services: Vec<Box<dyn Service>> = conf.nodes()
+        .filter_map(|node| {
+            match ConfKeywd::from_str(&node.key) {
+                Ok(keywd) => match keywd.kind() == ConfKind::Service.to_string() {
+                    true => Some((keywd, node)),
+                    false => None,
+                }
+                Err(_) => None,
+            }
+        })
+        .filter_map::<Box<dyn Service>, _>(|(keywd, node)| {
+            match keywd.kind().as_str() {
+                "CameraService" => {
+                    let conf = CameraServiceConf::new(&dbg, node);
+                    match Image::load(&conf.template_match.template) {
+                        Ok(template) => {
+                            let service = CameraService::new(&dbg, conf, template, position_send.clone(), thread_pool.scheduler());
+                            Some(Box::new(service))
+                        }
+                        Err(err) => {
+                            log::debug!("{dbg}.main | Can't read template: {:?}", err);
+                            None
+                        }
                     }
-                    "ModbusService" => {
-                        let conf = ModbusServiceConf::new(&dbg, node);
-                        let service = ModbusService::new(&dbg, conf, position_recv.pop().unwrap(), thread_pool.scheduler());
-                        services.push(Box::new(service));
-                    }
-                    _ => log::debug!("{dbg}.main | Unknown Service '{} {} {}' in the configuration", keywd.kind(), keywd.name(), keywd.title()),
+                }
+                "ModbusService" => {
+                    let conf = ModbusServiceConf::new(&dbg, node);
+                    let service = ModbusService::new(&dbg, conf, position_recv.pop().unwrap(), thread_pool.scheduler());
+                    Some(Box::new(service))
+                }
+                _ => {
+                    log::debug!("{dbg}.main | Unknown Service '{} {} {}' in the configuration", keywd.kind(), keywd.name(), keywd.title());
+                    None
                 }
             }
-        }
-    }
+        })
+        .collect();
     for service in &services {
         service.run()?;
     }
