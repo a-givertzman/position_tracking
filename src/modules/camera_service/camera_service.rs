@@ -128,7 +128,7 @@ impl Service for CameraService {
             //     .map_err(|err| Error::new(dbg, "template to gray error").pass(err.to_string()))?;
             let templ_match = BfMatch::new(
                 conf.template_match.method,
-                conf.template_match.threshold,
+                conf.template_match.match_ratio,
                 template,
                 AutoBrightnessAndContrast::new(
                     conf.image.brightness_contrast.hist_clip_left,

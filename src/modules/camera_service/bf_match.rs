@@ -1,14 +1,14 @@
 use std::time::Instant;
 
 use frdm_tools::{ContextRead, ContextWrite, Eval, EvalResult, Image, ResultCtx};
-use opencv::{core::{DMatch, Mat, Vector, VectorToVec}, prelude::{DescriptorMatcherTrait, DescriptorMatcherTraitConst, Feature2DTrait}};
+use opencv::{core::{DMatch, Mat, Vector}, prelude::{DescriptorMatcherTraitConst, Feature2DTrait}};
 use sal_core::{dbg::Dbg, error::Error};
 
 ///
 /// Brute Force Match
 pub struct BfMatch {
     method: opencv::imgproc::TemplateMatchModes,
-    threshold: f64,
+    match_ratio: f64,
     template: Image,
     ctx: Box<dyn Eval<Image, EvalResult>>,
     dbg: Dbg,
@@ -20,11 +20,11 @@ impl BfMatch {
     /// Returns [BfMatch] new instance
     /// - `threshold` - ...
     /// - `method` - TM_CCOEFF_NORMED or TM_CCORR_NORMED
-    pub fn new(method: opencv::imgproc::TemplateMatchModes, threshold: f64, template: Image, ctx: impl Eval<Image, EvalResult> + 'static) -> Self {
+    pub fn new(method: opencv::imgproc::TemplateMatchModes, match_ratio: f64, template: Image, ctx: impl Eval<Image, EvalResult> + 'static) -> Self {
         let dbg = Dbg::new("", "BfMatch");
         Self { 
             method,
-            threshold,
+            match_ratio,
             template,
             ctx: Box::new(ctx),
             dbg,
@@ -43,12 +43,12 @@ impl BfMatch {
 
         ) {
             Ok(_) => Ok(frame),
-            Err(err) => Err(Error::new("me", "area").pass(err.to_string())),
+            Err(err) => Err(Error::new(&self.dbg, "area").pass(err.to_string())),
         }
     }
     ///
     /// ORB Matching
-    fn orb_match(dbg: &Dbg, template_img: &opencv::core::Mat, input_img: &mut opencv::core::Mat, match_ratio: f32) -> Result<(), Error> {
+    fn bf_match(dbg: &Dbg, template_img: &Mat, input_img: &mut Mat, match_ratio: f32) -> Result<(), Error> {
         let mut orb = opencv::features2d::SIFT::create(
             0,
             3,
@@ -69,11 +69,11 @@ impl BfMatch {
         //     // nfeatures, scale_factor, nlevels, edge_threshold, first_level, wta_k, score_type, patch_size, fast_threshold
         // )
             // .map_err(|err| Error::new(dbg, "RB::create error").pass(err.to_string()))?;
-        let mask = opencv::core::Mat::default();
+        let mask = Mat::default();
         let mut template_keypoints = Vector::default();
         let mut input_keypoints = Vector::default();
-        let mut template_descr = opencv::core::Mat::default();
-        let mut input_descr = opencv::core::Mat::default();
+        let mut template_descr = Mat::default();
+        let mut input_descr = Mat::default();
         orb.detect_and_compute(template_img, &mask, &mut template_keypoints, &mut template_descr, false)
             .map_err(|err| Error::new(dbg, "detect_and_compute template_img error").pass(err.to_string()))?;
         orb.detect_and_compute(input_img, &mask, &mut input_keypoints, &mut input_descr, false)
@@ -90,22 +90,22 @@ impl BfMatch {
         //     Some(m) => m.to_vec(),
         //     None => vec![],
         // };
-        // println!("orbMatch | Train matches: {:?}", bf_matches);
+        // log::debug!("{dbg}.bf_match | Train matches: {:?}", bf_matches);
         let mut bf_matches: Vector<Vector<DMatch>> = Vector::default();
-        let mask = unsafe { opencv::core::Mat::new_rows_cols(0, 0, opencv::core::CV_8UC1).unwrap() };
+        let mask = unsafe { Mat::new_rows_cols(0, 0, opencv::core::CV_8UC1).unwrap() };
         bf.knn_train_match(&template_descr, &input_descr, &mut bf_matches, 3, &mask, false)
             .map_err(|err| Error::new(dbg, "knn_train_match").pass(err.to_string()))?;
-        println!("orbMatch | KNN matches: {:?}", bf_matches);
+        log::trace!("{dbg}.bf_match | KNN matches: {:?}", bf_matches);
         // let mut good_matches = Vector::default();
         let bf_matches: Vec<Vector<DMatch>> = bf_matches.iter().filter(|mm| {
             let m0 = mm.get(0).unwrap();
             let m1 = mm.get(1).unwrap();
-            println!("orbMatch | Match: {:?}", m0);
+            // log::debug!("{dbg}.bf_match | Match: {:?}", m0);
             m0.distance < match_ratio * m1.distance
         }).collect();
-        // println!("orbMatch | good matches: {:?}", good_matches);
-        let mut out = opencv::core::Mat::default();
-        if let Err(err) = opencv::features2d::draw_matches_knn(
+        // log::debug!("{dbg}.bf_match | good matches: {:?}", good_matches);
+        let mut out = Mat::default();
+        opencv::features2d::draw_matches_knn(
             template_img, 
             &template_keypoints, 
             input_img,
@@ -116,9 +116,7 @@ impl BfMatch {
             opencv::core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
             &Vector::default(), 
             opencv::features2d::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS,
-        ) {
-            println!("orbMatch | Error: {:?}", err);
-        }
+        ).map_err(|err| Error::new(dbg, "Can't draw matches").pass(err.to_string()))?;
         input_img.clone_from(&out);
         // features2d::draw_keypoints(
         //     patternImg,
@@ -160,7 +158,7 @@ impl Eval<Image, EvalResult> for BfMatch {
                 let t = Instant::now();
                 let result: &ResultCtx = ctx.read();
                 let mut frame = result.frame.clone();
-                match Self::orb_match(&self.dbg, &self.template.mat, &mut frame.mat, 0.8) {
+                match Self::bf_match(&self.dbg, &self.template.mat, &mut frame.mat, self.match_ratio as f32) {
                     Ok(_) => {
                         let result = ResultCtx { frame: frame };
                         log::debug!("BfMatch.eval | Elapsed: {:?}", t.elapsed());

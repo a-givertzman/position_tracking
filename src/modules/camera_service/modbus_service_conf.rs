@@ -38,8 +38,8 @@ impl Register {
 ///     wait-started: 10 ms         # optional, next service will wait until current completely started plus specified time
 ///     unit 01:
 ///         address: 192.168.100.1:502
-///         x-function 03: 101
-///         y-function 03: 103
+///         function-x 03: 101
+///         function-y 03: 103
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct ModbusServiceConf {
@@ -68,7 +68,7 @@ impl ModbusServiceConf {
         log::trace!("{dbg}.new | name: {:?}", name);
         let wait_started: Option<Duration> = conf.get_duration("wait-started").ok();
         log::trace!("{}.new | wait-started: {:?}", dbg, wait_started);
-        let (unit, addr, x_register, y_register) = conf.nodes()
+        let (unit, addr, register_x, register_y) = conf.nodes()
             .filter_map(|node| {
                 log::debug!("{dbg}.new | node: {:#?}", node);
                 match ConfCustomKeywd::from_str(&node.key) {
@@ -76,18 +76,18 @@ impl ModbusServiceConf {
                         if keywd.name() == "unit" {
                             let unit = keywd.title().parse().expect(&format!("{dbg}.new | 'unit number' - not found or wrong configuration"));
                             let addr: String = node.get("address").expect(&format!("{dbg}.new | 'unit {}: address' - not found or wrong configuration", keywd.title()));
-                            let (x_function, x_register) = node.get_by_custom_keywd("", "xfunction").map(|(keywd, node)| {
+                            let (x_function, x_register) = node.get_by_custom_keywd("", "function-x").map(|(keywd, node)| {
                                 (
-                                    FunctionCode(keywd.title().parse().expect(&format!("{dbg}.new | 'unit {}: x-function code' - not found or wrong configuration", keywd.title()))),
-                                    Register(node.conf.as_u64().expect(&format!("{dbg}.new | 'unit {}: x-function register' - not found or wrong configuration", keywd.title())) as u16)
+                                    FunctionCode(keywd.title().parse().expect(&format!("{dbg}.new | 'unit {}: function-x code' - not found or wrong configuration", keywd.title()))),
+                                    Register(node.conf.as_u64().expect(&format!("{dbg}.new | 'unit {}: function-x register' - not found or wrong configuration", keywd.title())) as u16)
                                 )
-                            }).expect(&format!("{dbg}.new | 'unit {}: x-function' - not found or wrong configuration", keywd.title()));
-                            let (y_function, y_register) = node.get_by_custom_keywd("", "y-function").map(|(keywd, node)| {
+                            }).expect(&format!("{dbg}.new | 'unit {}: function-x' - not found or wrong configuration", keywd.title()));
+                            let (y_function, y_register) = node.get_by_custom_keywd("", "function-y").map(|(keywd, node)| {
                                 (
-                                    FunctionCode(keywd.title().parse().expect(&format!("{dbg}.new | 'unit {}: y-function code' - not found or wrong configuration", keywd.title()))),
-                                    Register(node.conf.as_u64().expect(&format!("{dbg}.new | 'unit {}: y-function register' - not found or wrong configuration", keywd.title())) as u16)
+                                    FunctionCode(keywd.title().parse().expect(&format!("{dbg}.new | 'unit {}: function-y code' - not found or wrong configuration", keywd.title()))),
+                                    Register(node.conf.as_u64().expect(&format!("{dbg}.new | 'unit {}: function-y register' - not found or wrong configuration", keywd.title())) as u16)
                                 )
-                            }).expect(&format!("{dbg}.new | 'unit {}: y-function' - not found or wrong configuration", keywd.title()));
+                            }).expect(&format!("{dbg}.new | 'unit {}: function-y' - not found or wrong configuration", keywd.title()));
                             Some((unit, addr, (x_function, x_register), (y_function, y_register)))
                         } else {
                             None
@@ -98,21 +98,17 @@ impl ModbusServiceConf {
             })
             .next()
             .expect(&format!("{dbg}.new | 'unit' - not found or wrong configuration"));
-        log::trace!("{}.new | unit: {:?}", dbg, unit);
-        log::trace!("{}.new | unit: {:?}", dbg, unit);
-        let template_match = conf.get("template-match").expect(&format!("{dbg}.new | 'template-match' - not found or wrong configuration"));
-        let template_match = TemplateMatchConf::new(&dbg, template_match);
-        log::trace!("{}.new | template-match: {:?}", dbg, template_match);
-        let camera = conf.get("camera").expect(&format!("{dbg}.new | 'camera' - not found or wrong configuration"));
-        let camera = CameraConf::new(&name, &camera);
-        log::trace!("{dbg}.new | camera: {:#?}", camera);
+        log::debug!("{}.new | unit: {:?}", dbg, unit);
+        log::debug!("{}.new | \taddr: {:?}", dbg, addr);
+        log::debug!("{}.new | \tregister_x: {:?}", dbg, register_x);
+        log::debug!("{}.new | \tregister_y: {:?}", dbg, register_y);
         Self {
             name,
             wait_started,
             unit,
             addr,
-            register_x: x_register,
-            register_y: y_register,
+            register_x,
+            register_y,
         }
     }
 }

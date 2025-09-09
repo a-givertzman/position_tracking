@@ -46,12 +46,12 @@ service CameraService:
             gamma: 0.0
     template-match:
         template: template_640.png
-        threshold: 0.8
+        match-ratio: 0.8            # Brute Force matching threshold
         method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended, 
 
 service ModbusService:
     wait-started: 10 ms         # optional, next service will wait until current completely started plus specified time
     unit 01:
         address: 192.168.100.1:502
-        xfunction 03: 101
-        y-function 03: 103
+        function-x 03: 101
+        function-y 03: 103

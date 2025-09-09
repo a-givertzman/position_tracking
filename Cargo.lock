@@ -3866,7 +3866,7 @@ dependencies = [
 [[package]]
 name = "sal-sync"
 version = "0.3.0"
-source = "git+https://github.com/a-givertzman/rust-sal-sync.git?tag=0.3.0#d0876d07d3271b7e7fd888c219ccda58411ee1d9"
+source = "git+https://github.com/a-givertzman/rust-sal-sync.git?tag=0.3.0#c3a6f3464b872f38c1bc954475c4e53fe96d5dd3"
 dependencies = [
  "api-tools",
  "chrono",

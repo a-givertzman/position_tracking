@@ -6,7 +6,7 @@ use sal_sync::services::{conf::{ConfTree, ConfTreeGet}, entity::Name};
 /// 
 /// Conf Example:
 /// ```yaml
-///     threshold: 0.8
+///     match-ratio: 0.8
 ///     method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended, 
 /// ```
 #[derive(Debug, Clone, PartialEq)]
@@ -14,7 +14,7 @@ pub struct TemplateMatchConf {
     pub name: Name,
     pub template: String,
     pub method: opencv::imgproc::TemplateMatchModes,
-    pub threshold: f64,
+    pub match_ratio: f64,
 }
 //
 // 
@@ -35,13 +35,13 @@ impl TemplateMatchConf {
         let method: String = conf.get("method").expect(&format!("{dbg}.new | 'method' - not found or wrong configuration"));
         let method = Self::template_match_modes_from_str(&method).expect(&format!("{dbg}.new | Unknown 'method' {method}"));
         log::trace!("{}.new | method: {:?}", dbg, method);
-        let threshold: f64 = conf.get("threshold").expect(&format!("{dbg}.new | 'threshold' - not found or wrong configuration"));
-        log::trace!("{}.new | threshold: {:?}", dbg, threshold);
+        let match_ratio: f64 = conf.get("match-ratio").expect(&format!("{dbg}.new | 'match-ratio' - not found or wrong configuration"));
+        log::trace!("{}.new | match-ratio: {:?}", dbg, match_ratio);
         Self {
             name,
             template,
             method,
-            threshold,
+            match_ratio,
         }
     }
     ///
