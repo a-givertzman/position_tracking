@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use frdm_tools::{ContextRead, ContextWrite, Eval, EvalResult, Image, ResultCtx};
-use opencv::{core::Mat, prelude::{DescriptorMatcherTrait, DescriptorMatcherTraitConst, Feature2DTrait}};
+use opencv::{core::{DMatch, Mat, Vector, VectorToVec}, prelude::{DescriptorMatcherTrait, DescriptorMatcherTraitConst, Feature2DTrait}};
 use sal_core::{dbg::Dbg, error::Error};
 
 ///
@@ -48,7 +48,7 @@ impl BfMatch {
     }
     ///
     /// ORB Matching
-    fn orb_match(dbg: &Dbg, pattern_img: &opencv::core::Mat, dst_img: &mut opencv::core::Mat, match_ratio: f32) -> Result<(), Error> {
+    fn orb_match(dbg: &Dbg, template_img: &opencv::core::Mat, input_img: &mut opencv::core::Mat, match_ratio: f32) -> Result<(), Error> {
         let orb = opencv::features2d::ORB::create(
             500,
             1.2,
@@ -63,27 +63,32 @@ impl BfMatch {
         );
         match orb {
             Ok(mut orb) => {
-                let mut keypoints_pattern = opencv::core::Vector::default();
-                let mut keypoints_dst_img = opencv::core::Vector::default();
-                let mut desc_pattern = opencv::core::Mat::default();
-                let mut desc_dst_img = opencv::core::Mat::default();
-                if let Err(err) = orb.detect_and_compute(pattern_img, &opencv::core::Mat::default(), &mut keypoints_pattern, &mut desc_pattern, false) {
-                    println!("orbMatch | detect_and_compute error:\n\t{:?}", err);
-                }
-                if let Err(err) = orb.detect_and_compute(dst_img, &opencv::core::Mat::default(), &mut keypoints_dst_img, &mut desc_dst_img, false) {
-                    println!("orbMatch | detect_and_compute error:\n\t{:?}", err);
-                }
-                let mut bf_matches: opencv::core::Vector<opencv::core::DMatch> = opencv::core::Vector::default();    // opencv::core::Vector<opencv::core::Vector<opencv::core::DMatch>>
-                match opencv::features2d::BFMatcher::create(opencv::core::NORM_HAMMING , true) {
-                    Ok(bf) => {
-                        bf.train_match(&desc_pattern, &desc_dst_img, &mut bf_matches, &opencv::core::Mat::default())
-                            .map_err(|err| Error::new(dbg, "orb_match").pass(err.to_string()))?;
-                        bf
-                    },
-                    Err(err) => panic!("orbMatch | BFMatcher create error: {:?}", err),
+                let mask = opencv::core::Mat::default();
+                let mut template_keypoints = Vector::default();
+                let mut input_keypoints = Vector::default();
+                let mut template_descr = opencv::core::Mat::default();
+                let mut input_descr = opencv::core::Mat::default();
+                orb.detect_and_compute(template_img, &mask, &mut template_keypoints, &mut template_descr, false)
+                    .map_err(|err| Error::new(dbg, "detect_and_compute template_img error").pass(err.to_string()))?;
+                orb.detect_and_compute(input_img, &mask, &mut input_keypoints, &mut input_descr, false)
+                    .map_err(|err| Error::new(dbg, "detect_and_compute input_img error").pass(err.to_string()))?;
+                let mut bf_matches: Vector<DMatch> = Vector::default();
+                let mut bf = opencv::features2d::BFMatcher::create(opencv::core::NORM_HAMMING , true)
+                    .map_err(|err| Error::new(dbg, "BFMatcher::create error").pass(err.to_string()))?;
+                bf.train_match(&template_descr, &input_descr, &mut bf_matches, &opencv::core::Mat::default())
+                    .map_err(|err| Error::new(dbg, "orb_match").pass(err.to_string()))?;
+                let mut bf_matches = bf_matches.to_vec();
+                bf_matches.sort_by(|a, b| a.distance.total_cmp(&b.distance));
+                let bf_matches = match bf_matches.get(..10) {
+                    Some(m) => m.to_vec(),
+                    None => vec![],
                 };
-                println!("orbMatch | matches: {:?}", bf_matches);
-                // let mut good_matches = opencv::core::Vector::default();
+                println!("orbMatch | Train matches: {:?}", bf_matches);
+                // let mut bf_matches: Vector<Vector<DMatch>> = Vector::default();
+                // bf.knn_match(&template_descr, &mut bf_matches, 2, &mask, false)
+                //     .map_err(|err| Error::new(dbg, "orb_match").pass(err.to_string()))?;
+                // println!("orbMatch | KNN matches: {:?}", bf_matches);
+                // let mut good_matches = Vector::default();
                 // for mm in bf_matches {
                 //     let m0 = mm.get(0).unwrap();
                 //     let m1 = mm.get(1).unwrap();
@@ -95,20 +100,20 @@ impl BfMatch {
                 // println!("orbMatch | good matches: {:?}", good_matches);
                 let mut out = opencv::core::Mat::default();
                 if let Err(err) = opencv::features2d::draw_matches(
-                    pattern_img, 
-                    &keypoints_pattern, 
-                    dst_img,
-                    &keypoints_dst_img, 
-                    &bf_matches, 
+                    template_img, 
+                    &template_keypoints, 
+                    input_img,
+                    &input_keypoints, 
+                    &bf_matches.into(),
                     &mut out, 
                     opencv::core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
                     opencv::core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
-                    &opencv::core::Vector::default(), 
+                    &Vector::default(), 
                     opencv::features2d::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS,
                 ) {
                     println!("orbMatch | Error: {:?}", err);
                 }
-                dst_img.clone_from(&out);
+                input_img.clone_from(&out);
                 // features2d::draw_keypoints(
                 //     patternImg,
                 //     &keypoints,

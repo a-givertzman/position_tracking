@@ -4,7 +4,7 @@ use opencv::prelude::{DescriptorMatcherTrait, Feature2DTrait};
 use sal_core::{dbg::Dbg, error::Error};
 use sal_sync::{services::{entity::{Name, Object}, Service, ServiceWaiting, RECV_TIMEOUT}, sync::Handles, thread_pool::Scheduler};
 
-use crate::modules::{BfMatch, CameraServiceConf, TemplateMatch};
+use crate::modules::{BfMatch, CameraServiceConf, GrayScale, TemplateMatch};
 
 /// 
 /// Dects defect on the frames coming from the camera
@@ -138,7 +138,9 @@ impl Service for CameraService {
                             InitialCtx::new(),
                         ),
                     ),
-                )
+                // GrayScale::new(
+                //     ),
+                ),
             );
             let mut camera = Camera::new(conf.camera.clone());
             match &conf.camera.from_path {

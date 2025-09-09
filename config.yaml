@@ -45,6 +45,6 @@ service CameraService:
             src2-weight: 0.5
             gamma: 0.0
     template-match:
-        template: template_128.png
+        template: template_640.png
         threshold: 0.8
         method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended, 
