@@ -52,5 +52,6 @@ service CameraService:
 service ModbusService:
     wait-started: 10 ms         # optional, next service will wait until current completely started plus specified time
     unit 01:
-        x-function 03: 101
+        address: 192.168.100.1:502
+        xfunction 03: 101
         y-function 03: 103

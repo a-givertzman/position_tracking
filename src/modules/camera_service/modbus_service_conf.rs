@@ -1,7 +1,7 @@
-use std::time::Duration;
+use std::{str::FromStr, time::Duration};
 use frdm_tools::camera::CameraConf;
 use sal_core::dbg::Dbg;
-use sal_sync::services::{conf::{ConfTree, ConfTreeGet}, entity::Name};
+use sal_sync::services::{conf::{ConfCustomKeywd, ConfTree, ConfTreeGet}, entity::Name};
 
 use crate::modules::TemplateMatchConf;
 
@@ -70,23 +70,24 @@ impl ModbusServiceConf {
         log::trace!("{}.new | wait-started: {:?}", dbg, wait_started);
         let (unit, addr, x_register, y_register) = conf.nodes()
             .filter_map(|node| {
-                match node.get_by_custom_keywd("", "unit") {
-                    Ok((keywd, node)) => {
+                log::debug!("{dbg}.new | node: {:#?}", node);
+                match ConfCustomKeywd::from_str(&node.key) {
+                    Ok(keywd) => {
                         if keywd.name() == "unit" {
                             let unit = keywd.title().parse().expect(&format!("{dbg}.new | 'unit number' - not found or wrong configuration"));
-                            let addr: String = node.get("address").expect(&format!("{dbg}.new | 'unit address' - not found or wrong configuration"));
-                            let (x_function, x_register) = node.get_by_custom_keywd("", "x-function").map(|(keywd, node)| {
+                            let addr: String = node.get("address").expect(&format!("{dbg}.new | 'unit {}: address' - not found or wrong configuration", keywd.title()));
+                            let (x_function, x_register) = node.get_by_custom_keywd("", "xfunction").map(|(keywd, node)| {
                                 (
-                                    FunctionCode(keywd.title().parse().expect(&format!("{dbg}.new | 'unit x-function code' - not found or wrong configuration"))),
-                                    Register(node.conf.as_u64().expect(&format!("{dbg}.new | 'unit x-function register' - not found or wrong configuration")) as u16)
+                                    FunctionCode(keywd.title().parse().expect(&format!("{dbg}.new | 'unit {}: x-function code' - not found or wrong configuration", keywd.title()))),
+                                    Register(node.conf.as_u64().expect(&format!("{dbg}.new | 'unit {}: x-function register' - not found or wrong configuration", keywd.title())) as u16)
                                 )
-                            }).expect(&format!("{dbg}.new | 'unit x-function' - not found or wrong configuration"));
+                            }).expect(&format!("{dbg}.new | 'unit {}: x-function' - not found or wrong configuration", keywd.title()));
                             let (y_function, y_register) = node.get_by_custom_keywd("", "y-function").map(|(keywd, node)| {
                                 (
-                                    FunctionCode(keywd.title().parse().expect(&format!("{dbg}.new | 'unit y-function code' - not found or wrong configuration"))),
-                                    Register(node.conf.as_u64().expect(&format!("{dbg}.new | 'unit y-function register' - not found or wrong configuration")) as u16)
+                                    FunctionCode(keywd.title().parse().expect(&format!("{dbg}.new | 'unit {}: y-function code' - not found or wrong configuration", keywd.title()))),
+                                    Register(node.conf.as_u64().expect(&format!("{dbg}.new | 'unit {}: y-function register' - not found or wrong configuration", keywd.title())) as u16)
                                 )
-                            }).expect(&format!("{dbg}.new | 'unit x-function' - not found or wrong configuration"));
+                            }).expect(&format!("{dbg}.new | 'unit {}: y-function' - not found or wrong configuration", keywd.title()));
                             Some((unit, addr, (x_function, x_register), (y_function, y_register)))
                         } else {
                             None

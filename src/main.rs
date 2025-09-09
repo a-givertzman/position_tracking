@@ -32,7 +32,7 @@ fn main() -> Result<(), Error>{
             }
         })
         .filter_map::<Box<dyn Service>, _>(|(keywd, node)| {
-            match keywd.kind().as_str() {
+            match keywd.name().as_str() {
                 "CameraService" => {
                     let conf = CameraServiceConf::new(&dbg, node);
                     match Image::load(&conf.template_match.template) {
@@ -47,6 +47,7 @@ fn main() -> Result<(), Error>{
                     }
                 }
                 "ModbusService" => {
+                    log::debug!("{dbg}.main | ModbusService conf: {:#?}", node);
                     let conf = ModbusServiceConf::new(&dbg, node);
                     let service = ModbusService::new(&dbg, conf, position_recv.pop().unwrap(), thread_pool.scheduler());
                     Some(Box::new(service))
