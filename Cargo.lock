@@ -239,7 +239,7 @@ dependencies = [
  "chrono",
  "debugging",
  "env_logger",
- "indexmap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indexmap 2.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log",
  "postgres",
  "sal-core",
@@ -355,7 +355,7 @@ dependencies = [
  "futures-lite",
  "parking",
  "polling",
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "slab",
  "windows-sys 0.60.2",
 ]
@@ -386,7 +386,7 @@ dependencies = [
  "cfg-if",
  "event-listener",
  "futures-lite",
- "rustix 1.0.8",
+ "rustix 1.1.1",
 ]
 
 [[package]]
@@ -412,7 +412,7 @@ dependencies = [
  "cfg-if",
  "futures-core",
  "futures-io",
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "signal-hook-registry",
  "slab",
  "windows-sys 0.60.2",
@@ -1003,7 +1003,7 @@ dependencies = [
  "document-features",
  "mio",
  "parking_lot 0.12.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "signal-hook",
  "signal-hook-mio",
  "winapi",
@@ -1402,12 +1402,12 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "errno"
-version = "0.3.13"
+version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "778e2ac28f6c47af28e4907f13ffd1e1ddbd400980a9abd7c8df189bf578a5ad"
+checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.0",
 ]
 
 [[package]]
@@ -1560,7 +1560,7 @@ dependencies = [
  "egui_plot",
  "env_logger",
  "hashers 1.0.1 (git+https://github.com/tmmcguire/hashers)",
- "indexmap 2.11.0 (git+https://github.com/indexmap-rs/indexmap)",
+ "indexmap 2.11.1 (git+https://github.com/indexmap-rs/indexmap)",
  "kanal 0.1.1 (git+https://github.com/fereidani/kanal.git)",
  "libc",
  "linked-hash-map",
@@ -1679,7 +1679,7 @@ version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc257fdb4038301ce4b9cd1b3b51704509692bb3ff716a410cbd07925d9dae55"
 dependencies = [
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "windows-targets 0.52.6",
 ]
 
@@ -2135,9 +2135,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.11.0"
+version = "2.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2481980430f9f78649238835720ddccc57e52df14ffce1c6f37391d61b563e9"
+checksum = "206a8042aec68fa4a62e8d3f7aa4ceb508177d9324faf261e1959e495b7a1921"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.5",
@@ -2146,8 +2146,8 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.11.0"
-source = "git+https://github.com/indexmap-rs/indexmap#91d53adb3239cd4e12b671db7656c99b10fedc53"
+version = "2.11.1"
+source = "git+https://github.com/indexmap-rs/indexmap#f33f4d9d64b87be51dc3a957b755ffe7790dc8e5"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.5",
@@ -2418,6 +2418,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cd945864f07fe9f5371a27ad7b52a172b4b499999f1d97574c9fa68373937e12"
 
 [[package]]
+name = "linux-raw-sys"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
+
+[[package]]
 name = "litemap"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2567,7 +2573,7 @@ dependencies = [
  "half",
  "hashbrown 0.15.5",
  "hexf-parse",
- "indexmap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indexmap 2.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log",
  "num-traits",
  "once_cell",
@@ -3367,7 +3373,7 @@ dependencies = [
  "concurrent-queue",
  "hermit-abi",
  "pin-project-lite",
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "windows-sys 0.60.2",
 ]
 
@@ -3791,15 +3797,16 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "1.0.8"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11181fbabf243db407ef8df94a6ce0b2f9a733bd8be4ad02b4eda9602296cac8"
+checksum = "9621e389a110cae094269936383d69b869492f03e5c1ed2d575a53c029d4441d"
 dependencies = [
  "bitflags 2.9.4",
  "errno",
  "libc",
+ "linux-raw-sys 0.11.0",
  "linux-raw-sys 0.9.4",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.0",
 ]
 
 [[package]]
@@ -3859,7 +3866,7 @@ dependencies = [
 [[package]]
 name = "sal-sync"
 version = "0.3.0"
-source = "git+https://github.com/a-givertzman/rust-sal-sync.git?tag=0.3.0#0c19f3b3c56016fe72de3c45ff22956a9133a72c"
+source = "git+https://github.com/a-givertzman/rust-sal-sync.git?tag=0.3.0#d0876d07d3271b7e7fd888c219ccda58411ee1d9"
 dependencies = [
  "api-tools",
  "chrono",
@@ -3872,7 +3879,7 @@ dependencies = [
  "debugging",
  "env_logger",
  "hashers 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "indexmap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indexmap 2.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "kanal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lexical",
  "log",
@@ -3983,7 +3990,7 @@ version = "0.9.34+deprecated"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
 dependencies = [
- "indexmap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indexmap 2.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "itoa",
  "ryu",
  "serde",
@@ -4290,7 +4297,7 @@ dependencies = [
  "fastrand",
  "getrandom 0.3.3",
  "once_cell",
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "windows-sys 0.60.2",
 ]
 
@@ -4309,7 +4316,7 @@ version = "0.1.1"
 source = "git+https://github.com/a-givertzman/rust-testing.git?tag=0.1.2#be59ecf9f07eee7b5df95f66ec7efea65bb7b5ed"
 dependencies = [
  "env_logger",
- "indexmap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indexmap 2.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log",
  "rand 0.8.5",
 ]
@@ -4320,7 +4327,7 @@ version = "0.1.1"
 source = "git+https://github.com/a-givertzman/rust-testing.git#be59ecf9f07eee7b5df95f66ec7efea65bb7b5ed"
 dependencies = [
  "env_logger",
- "indexmap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indexmap 2.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log",
  "rand 0.8.5",
 ]
@@ -4536,7 +4543,7 @@ version = "0.22.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a"
 dependencies = [
- "indexmap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indexmap 2.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml_datetime",
  "winnow",
 ]
@@ -4820,7 +4827,7 @@ checksum = "673a33c33048a5ade91a6b139580fa174e19fb0d23f396dca9fa15f2e1e49b35"
 dependencies = [
  "cc",
  "downcast-rs",
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "scoped-tls",
  "smallvec",
  "wayland-sys",
@@ -4833,7 +4840,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c66a47e840dc20793f2264eb4b3e4ecb4b75d91c0dd4af04b456128e0bdd449d"
 dependencies = [
  "bitflags 2.9.4",
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "wayland-backend",
  "wayland-scanner",
 ]
@@ -4855,7 +4862,7 @@ version = "0.31.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "447ccc440a881271b19e9989f75726d60faa09b95b0200a9b7eb5cc47c3eeb29"
 dependencies = [
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "wayland-client",
  "xcursor",
 ]
@@ -5004,7 +5011,7 @@ dependencies = [
  "cfg_aliases",
  "document-features",
  "hashbrown 0.15.5",
- "indexmap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indexmap 2.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log",
  "naga",
  "once_cell",
@@ -5712,7 +5719,7 @@ dependencies = [
  "libc",
  "libloading",
  "once_cell",
- "rustix 1.0.8",
+ "rustix 1.1.1",
  "x11rb-protocol",
 ]
 
@@ -5779,9 +5786,9 @@ dependencies = [
 
 [[package]]
 name = "zbus"
-version = "5.10.0"
+version = "5.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67a073be99ace1adc48af593701c8015cd9817df372e14a1a6b0ee8f8bf043be"
+checksum = "2d07e46d035fb8e375b2ce63ba4e4ff90a7f73cf2ffb0138b29e1158d2eaadf7"
 dependencies = [
  "async-broadcast",
  "async-executor",
@@ -5836,9 +5843,9 @@ dependencies = [
 
 [[package]]
 name = "zbus_macros"
-version = "5.10.0"
+version = "5.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e80cd713a45a49859dcb648053f63265f4f2851b6420d47a958e5697c68b131"
+checksum = "57e797a9c847ed3ccc5b6254e8bcce056494b375b511b3d6edcec0aeb4defaca"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
