@@ -100,7 +100,7 @@ impl BfMatch {
         let bf_matches: Vec<Vector<DMatch>> = bf_matches.iter().filter(|mm| {
             let m0 = mm.get(0).unwrap();
             let m1 = mm.get(1).unwrap();
-            // log::debug!("{dbg}.bf_match | Match: {:?}", m0);
+            log::trace!("{dbg}.bf_match | Match: {:?}", m0);
             m0.distance < match_ratio * m1.distance
         }).collect();
         // log::debug!("{dbg}.bf_match | good matches: {:?}", good_matches);
