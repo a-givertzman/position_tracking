@@ -1,10 +1,9 @@
 use std::{sync::{atomic::{AtomicBool, Ordering}, Arc}, time::Duration};
-use frdm_tools::{camera::Camera, AutoBrightnessAndContrast, AutoBrightnessAndContrastCtx, AutoGamma, AutoGammaCtx, ContextRead, Cropping, Eval, EvalResult, Image, Initial, InitialCtx, ResultCtx};
-use opencv::prelude::{DescriptorMatcherTrait, Feature2DTrait};
+use frdm_tools::{camera::Camera, AutoBrightnessAndContrast, AutoBrightnessAndContrastCtx, AutoGamma, AutoGammaCtx, ContextRead, Eval, EvalResult, Image, Initial, InitialCtx, ResultCtx};
 use sal_core::{dbg::Dbg, error::Error};
 use sal_sync::{services::{entity::{Name, Object}, Service, ServiceWaiting, RECV_TIMEOUT}, sync::Handles, thread_pool::Scheduler};
 
-use crate::modules::{BfMatch, CameraServiceConf, GrayScale, TemplateMatch};
+use crate::modules::{BfMatch, CameraServiceConf};
 
 /// 
 /// Dects defect on the frames coming from the camera
@@ -12,6 +11,7 @@ pub struct CameraService {
     name: Name,
     conf: CameraServiceConf,
     template: Image,
+    position: kanal::Sender<(u16, u16)>,
     scheduler: Scheduler,
     handles: Arc<Handles<()>>,
     exit: Arc<AtomicBool>,
@@ -26,6 +26,7 @@ impl CameraService {
         parent: impl Into<String>,
         conf: CameraServiceConf,
         template: Image,
+        position: kanal::Sender<(u16, u16)>,
         scheduler: Scheduler,
     ) -> Self {
         let name = Name::new(parent, "CameraService");
@@ -34,6 +35,7 @@ impl CameraService {
             name,
             conf,
             template,
+            position,
             scheduler,
             handles: Arc::new(Handles::new(&dbg)),
             exit: Arc::new(AtomicBool::new(false)),
@@ -52,7 +54,7 @@ impl CameraService {
     }
     ///
     /// Processing an image
-    fn process(dbg: &Dbg, window: &str, window_src: &str, window_gamma: &str, window_abc: &str, templ_match: &impl Eval<Image, EvalResult>, frame: &Image) {
+    fn process(dbg: &Dbg, window: &str, window_src: &str, window_gamma: &str, window_abc: &str, templ_match: &impl Eval<Image, EvalResult>, frame: &Image) -> Option<(u16, u16)> {
         log::info!("{dbg}.process | Source frame...");
         opencv::highgui::imshow(window_src, &frame.mat).unwrap();
         opencv::highgui::wait_key(1).unwrap();
@@ -78,6 +80,7 @@ impl CameraService {
             }
             Err(err) => log::info!("{dbg}.run | Template match error: {:?}", err),
         };
+        Some((0, 0))
     }
 }
 //
@@ -107,6 +110,7 @@ impl Service for CameraService {
         let name = self.name.clone();
         let conf = self.conf.clone();
         let template = self.template.clone();
+        let position = self.position.clone();
         let window = format!("Matching result");
         let window_src = format!("Source frame");
         let window_gamma = format!("Auto gamma frame");
@@ -131,12 +135,6 @@ impl Service for CameraService {
                     conf.image.brightness_contrast.hist_clip_right,
                     AutoGamma::new(
                         conf.image.gamma.factor,
-                        // Cropping::new(
-                        //     conf.image.cropping.x,
-                        //     conf.image.cropping.width,
-                        //     conf.image.cropping.y,
-                        //     conf.image.cropping.height,
-                        // )
                         Initial::new(
                             InitialCtx::new(),
                         ),
@@ -171,17 +169,27 @@ impl Service for CameraService {
                                 log::debug!("{dbg}.run | Receiving frames from camera...");
                                 'camera: loop {
                                     match camera_stream.recv_timeout(RECV_TIMEOUT) {
-                                        Ok(frame) => Self::process(&dbg, &window, &window_src, &window_gamma, &window_abc, &templ_match, &frame),
+                                        Ok(frame) => {
+                                            if let Some(pos) = Self::process(&dbg, &window, &window_src, &window_gamma, &window_abc, &templ_match, &frame) {
+                                                if let Err(err) = position.send(pos) {
+                                                    log::error!("{dbg}.run | Can't send position to ModbusService: {:?}", err);
+                                                    camera.exit();
+                                                    break 'main;
+                                                }
+                                            }
+                                        }
                                         Err(err) => {
                                             match err {
                                                 kanal::ReceiveErrorTimeout::Timeout => {}
                                                 _ => {
+                                                    log::error!("{dbg}.run | Can't receive frame from Camera: {:?}", err);
                                                     break 'camera;
                                                 }
                                             }
                                         }
                                     }
                                     if exit.load(Ordering::Acquire) {
+                                        camera.exit();
                                         break 'main;
                                     }
                                 }

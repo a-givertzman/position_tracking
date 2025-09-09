@@ -48,3 +48,9 @@ service CameraService:
         template: template_640.png
         threshold: 0.8
         method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended, 
+
+service ModbusService:
+    wait-started: 10 ms         # optional, next service will wait until current completely started plus specified time
+    unit 01:
+        x-function 03: 101
+        y-function 03: 103
