@@ -119,6 +119,9 @@ impl Service for CameraService {
         let handle = self.scheduler.spawn(move || {
             let dbg = &dbg;
             Self::setup_opencv_windows(&dbg, vec![&window, &window_src, &window_gamma, &window_abc]);
+            // let mut template_gray = opencv::core::Mat::default();
+            // opencv::imgproc::cvt_color(&template.mat, &mut template_gray, opencv::imgproc::COLOR_BGR2GRAY, 0)
+            //     .map_err(|err| Error::new(dbg, "template to gray error").pass(err.to_string()))?;
             let templ_match = BfMatch::new(
                 conf.template_match.method,
                 conf.template_match.threshold,
@@ -138,9 +141,9 @@ impl Service for CameraService {
                             InitialCtx::new(),
                         ),
                     ),
-                // GrayScale::new(
-                //     ),
                 ),
+                // GrayScale::new(
+                // ),
             );
             let mut camera = Camera::new(conf.camera.clone());
             match &conf.camera.from_path {
