@@ -1,5 +1,5 @@
-use std::time::Duration;
 #[cfg(test)]
+use std::time::Duration;
 
 use std::{
     sync::Once, 

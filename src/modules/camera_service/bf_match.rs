@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use frdm_tools::{ContextRead, ContextWrite, Eval, EvalResult, Image, ResultCtx};
-use opencv::{core::{DMatch, Mat, Vector}, prelude::{DescriptorMatcherTraitConst, Feature2DTrait}};
+use opencv::{core::{DMatch, KeyPoint, KeyPointTraitConst, Mat, MatTraitConst, Point_, VecN, Vector}, imgproc::LineTypes, prelude::{DescriptorMatcherTraitConst, Feature2DTrait}};
 use sal_core::{dbg::Dbg, error::Error};
 
 ///
@@ -48,7 +48,7 @@ impl BfMatch {
     }
     ///
     /// ORB Matching
-    fn bf_match(dbg: &Dbg, template_img: &Mat, input_img: &mut Mat, match_ratio: f32) -> Result<(), Error> {
+    fn bf_match(dbg: &Dbg, template_img: &Mat, input_img: &mut Mat, match_ratio: f32) -> Result<(u16, u16), Error> {
         let mut orb = opencv::features2d::SIFT::create(
             0,
             3,
@@ -104,6 +104,35 @@ impl BfMatch {
             m0.distance < match_ratio * m1.distance
         }).collect();
         // log::debug!("{dbg}.bf_match | good matches: {:?}", good_matches);
+        let center = Self::center(
+            dbg,
+            1.0,
+            &bf_matches,
+            &input_keypoints,
+        );
+        log::debug!("{dbg}.bf_match | Center: {:?}", center);
+        if let Some(center) = center {
+            let _ = opencv::imgproc::circle(
+                input_img,
+                Point_::new(center.0.round() as i32, center.1.round() as i32),
+                12,
+                VecN([0.0, 0.0, 255.0, 0.0]),
+                -1,
+                LineTypes::FILLED as i32,
+                0,
+            );
+            let _ = opencv::imgproc::put_text(
+                input_img,
+                &format!("x: {}, y: {}", center.0, center.1),
+                Point_::new(10, input_img.rows() - 48),
+                opencv::imgproc::HersheyFonts::FONT_HERSHEY_SIMPLEX as i32,
+                1.0,
+                VecN([0.0, 0.0, 255.0, 0.0]),
+                4,
+                LineTypes::FILLED as i32,
+                false,
+            );
+        }
         let mut out = Mat::default();
         opencv::features2d::draw_matches_knn(
             template_img, 
@@ -145,7 +174,66 @@ impl BfMatch {
         //     core::VecN([0., 0., 255., 255.]),
         //     features2d::DrawMatchesFlags::DEFAULT,
         // )?;
-        Ok(())
+        match center {
+            Some(center) => Ok((center.0.round() as u16, center.1.round() as u16)),
+            None => Err(Error::new(dbg, "bf_match").err(format!("Can't find center of {} keypoints", input_keypoints.len()))),
+        }
+    }
+    ///
+    /// Returns a geometrical center of the points collection
+    fn center(dbg: &Dbg, threshold: f32, matches: &Vec<Vector<DMatch>>, keypoints: &Vector<KeyPoint>) -> Option<(f32, f32)> {
+        let points: Vector<KeyPoint> = matches.iter().fold(Vector::new(), |mut acc, m| {
+            acc.push(keypoints.get(m.get(0).unwrap().train_idx as usize).unwrap());
+            acc.push(keypoints.get(m.get(1).unwrap().train_idx as usize).unwrap());
+            acc
+        });
+        let len = points.len();
+        if len >= 2 {
+            log::debug!("{dbg}.center | Total Keypoints: {}", len);
+            let (mut xa, mut ya) = (0.0, 0.0);
+            for p in &points {
+                let p = p.pt();
+                xa += p.x;
+                ya += p.y;
+                log::trace!("{dbg}.center | x: {}, y: {}", p.x, p.y);
+            }
+            xa = xa / len as f32;
+            ya = ya / len as f32;
+            let (deviation_av, deviations) = points.iter().fold((0.0, vec![]), |(acc, mut deviations), p| {
+                let p = p.pt();
+                let deviation = ((p.x - xa).powi(2) + (p.y - ya).powi(2)).sqrt();
+                log::debug!("{dbg}.center | deviation: {}", deviation);
+                deviations.push(deviation);
+                (
+                    acc + deviation,
+                    deviations
+                )
+            });
+            let deviation_av = deviation_av / len as f32;
+            let mut len = 0;
+            let filtered = points.iter().enumerate().filter(|(i, p)| {
+                if deviations[*i] <= deviation_av * threshold {
+                    log::debug!("{dbg}.center | Filtered deviation: {}", deviations[*i]);
+                    len += 1;
+                    true
+                } else {
+                    false
+                }
+            });
+            let (mut xa, mut ya) = (0.0, 0.0);
+            for (_, p) in filtered {
+                let p = p.pt();
+                xa += p.x;
+                ya += p.y;
+                log::trace!("{dbg}.center | x: {}, y: {}", p.x, p.y);
+            }
+            log::debug!("{dbg}.center | Filtered Keypoints: {}", len);
+            xa = xa / len as f32;
+            ya = ya / len as f32;
+            Some((xa, ya))
+        } else {
+            None
+        }
     }
 }
 //
