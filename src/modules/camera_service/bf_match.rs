@@ -31,20 +31,50 @@ impl BfMatch {
         }
     }
     ///
-    /// Draws a bounding box around matched image segment
-    fn draw_box(&self, mut frame: Image, rec: opencv::core::Rect) -> Result<Image, Error> {
-        match opencv::imgproc::rectangle(
-            &mut frame.mat,
-            rec,
-            opencv::core::VecN([0.0, 0.0, 255.0, 255.0]),
-            3,
-            opencv::imgproc::LineTypes::FILLED as i32,
+    /// Draws a dot on the image
+    fn draw_dot(img: &mut Mat, x: f32, y: f32) {
+        let _ = opencv::imgproc::circle(
+            img,
+            Point_::new(x.round() as i32, y.round() as i32),
+            12,
+            VecN([0.0, 0.0, 255.0, 0.0]),
+            -1,
+            LineTypes::FILLED as i32,
             0,
-
-        ) {
-            Ok(_) => Ok(frame),
-            Err(err) => Err(Error::new(&self.dbg, "area").pass(err.to_string())),
-        }
+        );
+    }
+    ///
+    /// Draws a text on the image
+    fn draw_text(img: &mut Mat, x: i32, y: i32, text: &str) {
+        let _ = opencv::imgproc::put_text(
+            img,
+            text,
+            Point_::new(x, y),
+            opencv::imgproc::HersheyFonts::FONT_HERSHEY_SIMPLEX as i32,
+            1.0,
+            VecN([0.0, 0.0, 255.0, 0.0]),
+            4,
+            LineTypes::FILLED as i32,
+            false,
+        );
+    }
+    ///
+    /// Draws a text on the image
+    fn draw_matches_knn(img1: &Mat, keypoints1: &Vector<KeyPoint>, img2: &Mat, keypoints2: &Vector<KeyPoint>, matches: &Vector<Vector<DMatch>>) -> Mat {
+        let mut out = Mat::default();
+        let _ = opencv::features2d::draw_matches_knn(
+            img1, 
+            keypoints1, 
+            img2,
+            keypoints2,
+            matches,
+            &mut out, 
+            opencv::core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
+            opencv::core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
+            &Vector::default(), 
+            opencv::features2d::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS,
+        );
+        out
     }
     ///
     /// ORB Matching
@@ -56,19 +86,6 @@ impl BfMatch {
             10.0,
             1.6,
         ).map_err(|err| Error::new(dbg, "SIFT::create error").pass(err.to_string()))?;
-        // opencv::features2d::ORB::create(
-        //     500,
-        //     1.2,
-        //     8,
-        //     31,
-        //     0,
-        //     2,
-        //     opencv::features2d::ORB_ScoreType::HARRIS_SCORE, //FAST_SCORE
-        //     31,
-        //     20,        
-        //     // nfeatures, scale_factor, nlevels, edge_threshold, first_level, wta_k, score_type, patch_size, fast_threshold
-        // )
-            // .map_err(|err| Error::new(dbg, "RB::create error").pass(err.to_string()))?;
         let mask = Mat::default();
         let mut template_keypoints = Vector::default();
         let mut input_keypoints = Vector::default();
@@ -80,23 +97,12 @@ impl BfMatch {
             .map_err(|err| Error::new(dbg, "detect_and_compute input_img error").pass(err.to_string()))?;
         let bf = opencv::features2d::FlannBasedMatcher::create()    //opencv::core::NORM_L2 , true
             .map_err(|err| Error::new(dbg, "BFMatcher::create error").pass(err.to_string()))?;
-        // let mut bf_matches: Vector<DMatch> = Vector::default();
-        // bf.train_match(&template_descr, &input_descr, &mut bf_matches, &mask)
-        //     .map_err(|err| Error::new(dbg, "train_match").pass(err.to_string()))?;
-        // let mut bf_matches = bf_matches.to_vec();
-        // bf_matches.sort_by(|a, b| a.distance.total_cmp(&b.distance));
-        // let mut bf_matches: Vec<DMatch> = bf_matches.iter().filter(|m| m.distance < 40.0).cloned().collect();
-        // let bf_matches = match bf_matches.get(..10) {
-        //     Some(m) => m.to_vec(),
-        //     None => vec![],
-        // };
         // log::debug!("{dbg}.bf_match | Train matches: {:?}", bf_matches);
         let mut bf_matches: Vector<Vector<DMatch>> = Vector::default();
         let mask = unsafe { Mat::new_rows_cols(0, 0, opencv::core::CV_8UC1).unwrap() };
         bf.knn_train_match(&template_descr, &input_descr, &mut bf_matches, 3, &mask, false)
             .map_err(|err| Error::new(dbg, "knn_train_match").pass(err.to_string()))?;
         log::trace!("{dbg}.bf_match | KNN matches: {:?}", bf_matches);
-        // let mut good_matches = Vector::default();
         let bf_matches: Vec<Vector<DMatch>> = bf_matches.iter().filter(|mm| {
             let m0 = mm.get(0).unwrap();
             let m1 = mm.get(1).unwrap();
@@ -112,68 +118,12 @@ impl BfMatch {
         );
         if let Some((x, y)) = &center {
             log::debug!("{dbg}.bf_match | Center: {x}, {y}");
-            let _ = opencv::imgproc::circle(
-                input_img,
-                Point_::new(x.round() as i32, y.round() as i32),
-                12,
-                VecN([0.0, 0.0, 255.0, 0.0]),
-                -1,
-                LineTypes::FILLED as i32,
-                0,
-            );
-            let _ = opencv::imgproc::put_text(
-                input_img,
-                &format!("x: {}, y: {}", x, y),
-                Point_::new(10, input_img.rows() - 48),
-                opencv::imgproc::HersheyFonts::FONT_HERSHEY_SIMPLEX as i32,
-                1.0,
-                VecN([0.0, 0.0, 255.0, 0.0]),
-                4,
-                LineTypes::FILLED as i32,
-                false,
-            );
+            Self::draw_dot(input_img, *x, *y);
+            Self::draw_text(input_img, 10, input_img.rows() - 48, &format!("x: {}, y: {}", x, y));
         }
-        let mut out = Mat::default();
-        opencv::features2d::draw_matches_knn(
-            template_img, 
-            &template_keypoints, 
-            input_img,
-            &input_keypoints,
-            &bf_matches.into(),
-            &mut out, 
-            opencv::core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
-            opencv::core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
-            &Vector::default(), 
-            opencv::features2d::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS,
-        ).map_err(|err| Error::new(dbg, "Can't draw matches").pass(err.to_string()))?;
-        input_img.clone_from(&out);
-        // features2d::draw_keypoints(
-        //     patternImg,
-        //     &keypoints,
-        //     dstImg,
-        //     core::VecN([0., 255., 0., 255.]),
-        //     features2d::DrawMatchesFlags::DEFAULT,
-        // )?;
-        // imgproc::rectangle(
-        //     dstImg,
-        //     core::Rect::from_points(core::Point::new(0, 0), core::Point::new(50, 50)),
-        //     core::VecN([255., 0., 0., 0.]),
-        //     -1,
-        //     imgproc::LINE_8,
-        //     0,
-        // )?;
-        // // Use SIFT
-        // let mut sift = features2d::SIFT::create(0, 3, 0.04, 10., 1.6)?;
-        // let mut sift_keypoints = core::Vector::default();
-        // let mut sift_desc = core::Mat::default();
-        // sift.detect_and_compute(imgPattern, &mask, &mut sift_keypoints, &mut sift_desc, false)?;
-        // features2d::draw_keypoints(
-        //     &dstImg.clone(),
-        //     &sift_keypoints,
-        //     dstImg,
-        //     core::VecN([0., 0., 255., 255.]),
-        //     features2d::DrawMatchesFlags::DEFAULT,
-        // )?;
+        input_img.clone_from(
+            &Self::draw_matches_knn(template_img, &template_keypoints, input_img, &input_keypoints, &bf_matches.into())
+        );
         match center {
             Some((x, y)) => Ok((x.round() as u16, y.round() as u16)),
             None => Err(Error::new(dbg, "bf_match").err(format!("Can't find center of {} keypoints", input_keypoints.len()))),
