@@ -56,7 +56,8 @@ use crate::modules::{ImageConf, TemplateMatchConf};
 ///             src2-weight: 0.5
 ///             gamma: 0.0
 ///     template-match:
-///         threshold: 0.8
+///         match-ratio: 0.8            # the lower the ratio, the less matches will used (by the match distance)
+///         deviation_ratio: 1.7        # the lower the ratio, the less key points will used (closest to the geometrical center) 
 ///         method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended,
 ///         smooth-moving: 4    # Smooth filter for X & Y changes presset, the lower the setting, the lower the smoothing, 1 (default) - no smoothing, recomended max: 256
 /// ```
