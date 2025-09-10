@@ -8,7 +8,8 @@ use sal_core::{dbg::Dbg, error::Error};
 /// Brute Force Match
 pub struct BfMatch {
     method: opencv::imgproc::TemplateMatchModes,
-    match_ratio: f64,
+    match_ratio: f32,
+    deviation_ratio: f32,
     template: Image,
     ctx: Box<dyn Eval<Image, EvalResult>>,
     dbg: Dbg,
@@ -20,11 +21,12 @@ impl BfMatch {
     /// Returns [BfMatch] new instance
     /// - `threshold` - ...
     /// - `method` - TM_CCOEFF_NORMED or TM_CCORR_NORMED
-    pub fn new(method: opencv::imgproc::TemplateMatchModes, match_ratio: f64, template: Image, ctx: impl Eval<Image, EvalResult> + 'static) -> Self {
+    pub fn new(method: opencv::imgproc::TemplateMatchModes, match_ratio: f64, deviation_ratio: f64, template: Image, ctx: impl Eval<Image, EvalResult> + 'static) -> Self {
         let dbg = Dbg::new("", "BfMatch");
         Self { 
             method,
-            match_ratio,
+            match_ratio: match_ratio as f32,
+            deviation_ratio: deviation_ratio as f32,
             template,
             ctx: Box::new(ctx),
             dbg,
@@ -78,7 +80,7 @@ impl BfMatch {
     }
     ///
     /// ORB Matching
-    fn bf_match(dbg: &Dbg, template_img: &Mat, input_img: &mut Mat, match_ratio: f32) -> Result<(u16, u16), Error> {
+    fn bf_match(dbg: &Dbg, template_img: &Mat, input_img: &mut Mat, match_ratio: f32, deviation_ratio: f32) -> Result<(u16, u16), Error> {
         let mut orb = opencv::features2d::SIFT::create(
             0,
             3,
@@ -112,7 +114,7 @@ impl BfMatch {
         // log::debug!("{dbg}.bf_match | good matches: {:?}", good_matches);
         let center = Self::center(
             dbg,
-            1.7,
+            deviation_ratio,
             &bf_matches,
             &input_keypoints,
         );
@@ -131,7 +133,7 @@ impl BfMatch {
     }
     ///
     /// Returns a geometrical center of the points collection
-    fn center(dbg: &Dbg, threshold: f32, matches: &Vec<Vector<DMatch>>, keypoints: &Vector<KeyPoint>) -> Option<(f32, f32)> {
+    fn center(dbg: &Dbg, deviation_ratio: f32, matches: &Vec<Vector<DMatch>>, keypoints: &Vector<KeyPoint>) -> Option<(f32, f32)> {
         let points: Vector<KeyPoint> = matches.iter().fold(Vector::new(), |mut acc, m| {
             acc.push(keypoints.get(m.get(0).unwrap().train_idx as usize).unwrap());
             acc.push(keypoints.get(m.get(1).unwrap().train_idx as usize).unwrap());
@@ -161,8 +163,8 @@ impl BfMatch {
             });
             let deviation_av = deviation_av / len as f32;
             let mut len = 0;
-            let filtered = points.iter().enumerate().filter(|(i, p)| {
-                if deviations[*i] <= deviation_av * threshold {
+            let filtered = points.iter().enumerate().filter(|(i, _)| {
+                if deviations[*i] <= deviation_av * deviation_ratio {
                     log::trace!("{dbg}.center | Filtered deviation: {}", deviations[*i]);
                     len += 1;
                     true
@@ -196,7 +198,7 @@ impl Eval<Image, EvalResult> for BfMatch {
                 let t = Instant::now();
                 let result: &ResultCtx = ctx.read();
                 let mut frame = result.frame.clone();
-                match Self::bf_match(&self.dbg, &self.template.mat, &mut frame.mat, self.match_ratio as f32) {
+                match Self::bf_match(&self.dbg, &self.template.mat, &mut frame.mat, self.match_ratio, self.deviation_ratio) {
                     Ok(_) => {
                         let result = ResultCtx { frame: frame };
                         log::debug!("BfMatch.eval | Elapsed: {:?}", t.elapsed());

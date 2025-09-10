@@ -133,6 +133,7 @@ impl Service for CameraService {
             let templ_match = BfMatch::new(
                 conf.template_match.method,
                 conf.template_match.match_ratio,
+                conf.template_match.deviation_ratio,
                 template,
                 AutoBrightnessAndContrast::new(
                     conf.image.brightness_contrast.hist_clip_left,

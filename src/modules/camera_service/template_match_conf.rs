@@ -6,7 +6,8 @@ use sal_sync::services::{conf::{ConfTree, ConfTreeGet}, entity::Name};
 /// 
 /// Conf Example:
 /// ```yaml
-///     match-ratio: 0.8
+///     match-ratio: 0.8            # the lower the ratio, the less matches will used (by the match distance)
+///     deviation_ratio: 1.7        # the lower the ratio, the less key points will used (closest to the geometrical center) 
 ///     method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended, 
 ///     smooth-moving: 4    # Smooth filter for X & Y changes presset, the lower the setting, the lower the smoothing, 1 (default) - no smoothing, recomended max: 256
 /// ```
@@ -16,6 +17,7 @@ pub struct TemplateMatchConf {
     pub template: String,
     pub method: opencv::imgproc::TemplateMatchModes,
     pub match_ratio: f64,
+    pub deviation_ratio: f64,
     pub smooth: Option<f64>,
 }
 //
@@ -39,6 +41,8 @@ impl TemplateMatchConf {
         log::trace!("{}.new | method: {:?}", dbg, method);
         let match_ratio: f64 = conf.get("match-ratio").expect(&format!("{dbg}.new | 'match-ratio' - not found or wrong configuration"));
         log::trace!("{}.new | match-ratio: {:?}", dbg, match_ratio);
+        let deviation_ratio: f64 = conf.get("deviation-ratio").expect(&format!("{dbg}.new | 'deviation-ratio' - not found or wrong configuration"));
+        log::trace!("{}.new | deviation-ratio: {:?}", dbg, deviation_ratio);
         let smooth = conf.get("smooth-moving");
         log::trace!("{}.new | smooth-moving: {:?}", dbg, smooth);
         Self {
@@ -46,6 +50,7 @@ impl TemplateMatchConf {
             template,
             method,
             match_ratio,
+            deviation_ratio,
             smooth,
         }
     }

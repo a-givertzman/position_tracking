@@ -8,7 +8,7 @@ use super::filter::Filter;
 #[derive(Debug, Clone)]
 pub struct FilterSmooth<T> {
     prev: Option<T>,
-    factor: f64,
+    // factor: f64,
     factor_inv: f64,
 }
 //
@@ -20,7 +20,7 @@ impl<T: Copy> FilterSmooth<T> {
     pub fn new(initial: Option<T>, factor: f64) -> Self {
         Self {
             prev: initial,
-            factor,
+            // factor,
             factor_inv: 1.0 / factor,
         }
     }
