@@ -8,6 +8,7 @@ use crate::modules::{CameraService, CameraServiceConf, ModbusService, ModbusServ
 
 
 mod modules;
+mod tests;
 ///
 /// Application entry point
 fn main() -> Result<(), Error>{

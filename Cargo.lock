@@ -3396,6 +3396,7 @@ dependencies = [
 name = "position_tracking"
 version = "0.1.0"
 dependencies = [
+ "circular-buffer",
  "debugging",
  "env_logger",
  "frdm-tools",
