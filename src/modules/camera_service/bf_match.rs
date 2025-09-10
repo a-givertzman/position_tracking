@@ -152,7 +152,7 @@ impl BfMatch {
             let (deviation_av, deviations) = points.iter().fold((0.0, vec![]), |(acc, mut deviations), p| {
                 let p = p.pt();
                 let deviation = ((p.x - xa).powi(2) + (p.y - ya).powi(2)).sqrt();
-                log::debug!("{dbg}.center | deviation: {}", deviation);
+                log::trace!("{dbg}.center | deviation: {}", deviation);
                 deviations.push(deviation);
                 (
                     acc + deviation,
@@ -163,7 +163,7 @@ impl BfMatch {
             let mut len = 0;
             let filtered = points.iter().enumerate().filter(|(i, p)| {
                 if deviations[*i] <= deviation_av * threshold {
-                    log::debug!("{dbg}.center | Filtered deviation: {}", deviations[*i]);
+                    log::trace!("{dbg}.center | Filtered deviation: {}", deviations[*i]);
                     len += 1;
                     true
                 } else {
