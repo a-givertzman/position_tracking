@@ -106,7 +106,7 @@ impl BfMatch {
         // log::debug!("{dbg}.bf_match | good matches: {:?}", good_matches);
         let center = Self::center(
             dbg,
-            1.0,
+            1.7,
             &bf_matches,
             &input_keypoints,
         );

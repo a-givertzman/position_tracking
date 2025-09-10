@@ -158,7 +158,7 @@ impl Service for CameraService {
                         // match templ_match.eval(frame) {
                         //     Err(err) => log::info!("{dbg}.run | Template match error: {:?}", err),
                         // }
-                        std::thread::sleep(Duration::from_millis(2000));
+                        std::thread::sleep(Duration::from_millis(512));
                     }
                 }
                 None => {
