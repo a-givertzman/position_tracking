@@ -110,11 +110,11 @@ impl BfMatch {
             &bf_matches,
             &input_keypoints,
         );
-        log::debug!("{dbg}.bf_match | Center: {:?}", center);
-        if let Some(center) = center {
+        if let Some((x, y)) = &center {
+            log::debug!("{dbg}.bf_match | Center: {x}, {y}");
             let _ = opencv::imgproc::circle(
                 input_img,
-                Point_::new(center.0.round() as i32, center.1.round() as i32),
+                Point_::new(x.round() as i32, y.round() as i32),
                 12,
                 VecN([0.0, 0.0, 255.0, 0.0]),
                 -1,
@@ -123,7 +123,7 @@ impl BfMatch {
             );
             let _ = opencv::imgproc::put_text(
                 input_img,
-                &format!("x: {}, y: {}", center.0, center.1),
+                &format!("x: {}, y: {}", x, y),
                 Point_::new(10, input_img.rows() - 48),
                 opencv::imgproc::HersheyFonts::FONT_HERSHEY_SIMPLEX as i32,
                 1.0,
@@ -138,7 +138,7 @@ impl BfMatch {
             template_img, 
             &template_keypoints, 
             input_img,
-            &input_keypoints, 
+            &input_keypoints,
             &bf_matches.into(),
             &mut out, 
             opencv::core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
@@ -175,7 +175,7 @@ impl BfMatch {
         //     features2d::DrawMatchesFlags::DEFAULT,
         // )?;
         match center {
-            Some(center) => Ok((center.0.round() as u16, center.1.round() as u16)),
+            Some((x, y)) => Ok((x.round() as u16, y.round() as u16)),
             None => Err(Error::new(dbg, "bf_match").err(format!("Can't find center of {} keypoints", input_keypoints.len()))),
         }
     }
@@ -221,8 +221,8 @@ impl BfMatch {
                 }
             });
             let (mut xa, mut ya) = (0.0, 0.0);
-            for (_, p) in filtered {
-                let p = p.pt();
+            for (_, kp) in filtered {
+                let p = kp.pt();
                 xa += p.x;
                 ya += p.y;
                 log::trace!("{dbg}.center | x: {}, y: {}", p.x, p.y);
