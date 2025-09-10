@@ -8,6 +8,7 @@ use sal_sync::services::{conf::{ConfTree, ConfTreeGet}, entity::Name};
 /// ```yaml
 ///     match-ratio: 0.8
 ///     method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended, 
+///     smooth-moving: 4    # Smooth filter for X & Y changes presset, the lower the setting, the lower the smoothing, 1 (default) - no smoothing, recomended max: 256
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct TemplateMatchConf {
@@ -15,6 +16,7 @@ pub struct TemplateMatchConf {
     pub template: String,
     pub method: opencv::imgproc::TemplateMatchModes,
     pub match_ratio: f64,
+    pub smooth: Option<f64>,
 }
 //
 // 
@@ -37,11 +39,14 @@ impl TemplateMatchConf {
         log::trace!("{}.new | method: {:?}", dbg, method);
         let match_ratio: f64 = conf.get("match-ratio").expect(&format!("{dbg}.new | 'match-ratio' - not found or wrong configuration"));
         log::trace!("{}.new | match-ratio: {:?}", dbg, match_ratio);
+        let smooth = conf.get("smooth-moving");
+        log::trace!("{}.new | smooth-moving: {:?}", dbg, smooth);
         Self {
             name,
             template,
             method,
             match_ratio,
+            smooth,
         }
     }
     ///

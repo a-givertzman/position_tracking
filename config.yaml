@@ -48,6 +48,7 @@ service CameraService:
         template: template_640.png
         match-ratio: 0.3            # Brute Force matching threshold
         method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended, 
+        smooth-moving: 4    # Smooth filter for X & Y changes presset, the lower the setting, the lower the smoothing, 1 - no smoothing, recomended max: 256
 
 service ModbusService:
     wait-started: 10 ms         # optional, next service will wait until current completely started plus specified time

@@ -38,8 +38,6 @@ mod camera_service_conf;
 mod camera_service;
 mod gray_scale;
 mod image_conf;
-mod modbus_service_conf;
-mod modbus_service;
 mod template_match_conf;
 mod template_match;
 
@@ -48,7 +46,5 @@ pub(crate) use camera_service_conf::*;
 pub(crate) use camera_service::*;
 pub(crate) use gray_scale::*;
 pub(crate) use image_conf::*;
-pub(crate) use modbus_service_conf::*;
-pub(crate) use modbus_service::*;
 pub(crate) use template_match_conf::*;
 pub(crate) use template_match::*;

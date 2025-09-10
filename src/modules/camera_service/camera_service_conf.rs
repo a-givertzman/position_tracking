@@ -57,7 +57,8 @@ use crate::modules::{ImageConf, TemplateMatchConf};
 ///             gamma: 0.0
 ///     template-match:
 ///         threshold: 0.8
-///         method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended, 
+///         method: TM_CCOEFF_NORMED    # TM_CCOEFF_NORMED or TM_CCORR_NORMED recomended,
+///         smooth-moving: 4    # Smooth filter for X & Y changes presset, the lower the setting, the lower the smoothing, 1 (default) - no smoothing, recomended max: 256
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct CameraServiceConf {

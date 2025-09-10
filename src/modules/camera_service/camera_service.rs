@@ -3,7 +3,7 @@ use frdm_tools::{camera::Camera, AutoBrightnessAndContrast, AutoBrightnessAndCon
 use sal_core::{dbg::Dbg, error::Error};
 use sal_sync::{services::{entity::{Name, Object}, Service, ServiceWaiting, RECV_TIMEOUT}, sync::Handles, thread_pool::Scheduler};
 
-use crate::modules::{BfMatch, CameraServiceConf};
+use crate::modules::{BfMatch, CameraServiceConf, FilterEmpty, FilterSmooth, Filter};
 
 /// 
 /// Dects defect on the frames coming from the camera
@@ -126,6 +126,10 @@ impl Service for CameraService {
             // let mut template_gray = opencv::core::Mat::default();
             // opencv::imgproc::cvt_color(&template.mat, &mut template_gray, opencv::imgproc::COLOR_BGR2GRAY, 0)
             //     .map_err(|err| Error::new(dbg, "template to gray error").pass(err.to_string()))?;
+            let (mut filter_x, mut filter_y): (Box<dyn Filter<Item = u16>>, Box<dyn Filter<Item = u16>>) = match conf.template_match.smooth {
+                Some(smooth) => (Box::new(FilterSmooth::<u16>::new(None, smooth)), Box::new(FilterSmooth::<u16>::new(None, smooth))),
+                None => (Box::new(FilterEmpty::<u16>::new()), Box::new(FilterEmpty::<u16>::new())),
+            };
             let templ_match = BfMatch::new(
                 conf.template_match.method,
                 conf.template_match.match_ratio,
@@ -170,7 +174,8 @@ impl Service for CameraService {
                                 'camera: loop {
                                     match camera_stream.recv_timeout(RECV_TIMEOUT) {
                                         Ok(frame) => {
-                                            if let Some(pos) = Self::process(&dbg, &window, &window_src, &window_gamma, &window_abc, &templ_match, &frame) {
+                                            if let Some((x, y)) = Self::process(&dbg, &window, &window_src, &window_gamma, &window_abc, &templ_match, &frame) {
+                                                let pos = (filter_x.add(x).unwrap(), filter_y.add(y).unwrap());
                                                 if let Err(err) = position.send(pos) {
                                                     log::error!("{dbg}.run | Can't send position to ModbusService: {:?}", err);
                                                     camera.exit();
